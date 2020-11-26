@@ -9,7 +9,16 @@
       >
         <template v-slot:[`item.opciones`]="{ item }">
           <v-icon small class="mr-2" @click="editItem(item)">edit</v-icon>
-          <v-icon small @click="deleteItem(item)">delete</v-icon>
+          <template v-if="item.condicion == 'Activo'">
+            <v-icon small @click="activarDesactivarMostrar(2,item)"
+              >block</v-icon
+            >
+          </template>
+          <template v-else>
+            <v-icon small @click="activarDesactivarMostrar(1,item)"
+              >check</v-icon
+            >
+          </template>
         </template>
         <template v-slot:[`item.condicion`]="{ item }">
           <h4 :class="getColor(item.condicion)" dark>
@@ -84,10 +93,32 @@
                 </v-card-actions>
               </v-card>
             </v-dialog>
+            <v-dialog v-model="adModal" max-width="290px">
+              <v-card>
+                <v-card-title class="headline" v-if="adAccion == '1'">
+                  ¿Activar Item?
+                </v-card-title>
+                <v-card-title class="headline" v-if="adAccion == '2'">
+                  ¿Desactivar Item?
+                </v-card-title>
+                <v-card-text>
+                  Estàs a punto de
+                  <span v-if="adAccion == '1'">Activar</span>
+                  <span v-if="adAccion == '2'">Desactivar</span>
+                  el ìtem {{ adNombre }}
+                </v-card-text>
+                <v-card-actions>
+                  <v-spacer></v-spacer>
+                  <v-btn text color='error' @click="activarDesactivarCerrar">Cancelar</v-btn>
+                  <v-btn v-if="adAccion==1" text color='primary' @click="activar">Activar</v-btn>
+                  <v-btn v-if="adAccion==2" text color='primary' @click="desactivar">Desactivar</v-btn>
+                </v-card-actions>
+              </v-card>
+            </v-dialog>
           </v-toolbar>
         </template>
         <template v-slot:no-data>
-          <v-btn color="primary" @click="initialize">refresh</v-btn>
+          <v-btn color="primary" @click="listar">refresh</v-btn>
         </template>
       </v-data-table>
     </v-flex>
@@ -115,6 +146,10 @@ export default {
     },
     valida: 0,
     validaMensaje: [],
+    adModal: 0,
+    adAccion: 0,
+    adNombre: "",
+    adId: "",
   }),
 
   computed: {
@@ -152,6 +187,19 @@ export default {
       else return "red--text text--light-1";
     },
 
+    activarDesactivarMostrar(accion, item) {
+      this.adModal = 1;
+      this.adNombre = item.nombre;
+      this.adId = item.idcategoria;
+      if (accion == 1) {
+        this.adAccion = 1;
+      } else if (accion == 2) {
+        this.adAccion = 2;
+      } else {
+        this.adModal = 0;
+      }
+    },
+
     listar() {
       let me = this;
       axios
@@ -169,8 +217,10 @@ export default {
     },
 
     editItem(item) {
+      this.editedItem.id = item.idcategoria;
+      this.editedItem.nombre = item.nombre;
+      this.editedItem.descripcion = item.descripcion;
       this.editedIndex = 1;
-      this.editedItem = Object.assign({}, item);
       this.dialog = true;
     },
 
@@ -181,14 +231,15 @@ export default {
     },
 
     close() {
-      this.limpiar();
       this.dialog = false;
+      this.limpiar();
     },
 
     limpiar() {
       this.editedItem.id = "";
       this.editedItem.nombre = "";
       this.editedItem.descripcion = "";
+      this.editedIndex = -1;
     },
 
     guardar() {
@@ -199,6 +250,9 @@ export default {
         let me = this;
         axios
           .put("api/Categorias/Actualizar", {
+            idcategoria: me.editedItem.id,
+            nombre: me.editedItem.nombre,
+            descripcion: me.editedItem.descripcion,
           })
           .then((item) => {
             me.close();
@@ -208,7 +262,6 @@ export default {
           .catch((error) => {
             console.log(error);
           });
-
       } else {
         let me = this;
         axios
@@ -228,7 +281,7 @@ export default {
     },
 
     validar() {
-      const item = this.editedItem
+      const item = this.editedItem;
       this.valida = 0;
       this.validaMensaje = [];
       if (item.nombre.length < 3 || item.nombre.length > 50) {
@@ -242,6 +295,42 @@ export default {
       }
       return this.valida;
     },
+
+    activar(){
+      let me = this;
+        axios
+          .put("api/Categorias/Activar/"+this.adId, {})
+          .then((item) => {
+            me.adModal=0;
+            me.adAccion=0;
+            me.adNombre='';
+            me.adId='';
+            me.listar();
+          })
+          .catch((error) => {
+            console.log(error);
+          });
+    },
+
+    desactivar(){
+      let me = this;
+        axios
+          .put("api/Categorias/Desactivar/"+this.adId, {})
+          .then((item) => {
+            me.adModal=0;
+            me.adAccion=0;
+            me.adNombre='';
+            me.adId='';
+            me.listar();
+          })
+          .catch((error) => {
+            console.log(error);
+          });
+    },
+
+    activarDesactivarCerrar(){
+      this.adModal=0;
+    }
   },
 };
 </script>
