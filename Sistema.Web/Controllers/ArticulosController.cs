@@ -67,8 +67,8 @@ namespace Sistema.Web.Controllers
                       condicion = articulo.condicion
                   });
               }
-        /*
-              // PUT: api/Categorias/Actualizar
+       
+              // PUT: api/Articulos/Actualizar
               [HttpPut("[action]")]
               public async Task<IActionResult> Actualizar([FromBody] ActualizarViewModel model)
               {
@@ -77,19 +77,23 @@ namespace Sistema.Web.Controllers
                       return BadRequest(ModelState);
                   }
 
-                  if (model.idcategoria <= 0)
+                  if (model.idarticulo <= 0)
                   {
                       return BadRequest();
                   }
 
-                  var categoria = await _context.Categorias.FirstOrDefaultAsync(
-                      c => c.idcategoria == model.idcategoria);
+                  var articulo = await _context.Articulos.FirstOrDefaultAsync(
+                      a => a.idarticulo == model.idarticulo);
 
-                  if (categoria == null) { return NotFound(); }
+                  if (articulo == null) { return NotFound(); }
 
-                  categoria.nombre = model.nombre;
-                  categoria.descripcion = model.descripcion;
-
+                articulo.idcategoria = model.idcategoria;
+                articulo.codigo = model.codigo;
+                articulo.nombre = model.nombre;
+                articulo.precio_venta = model.precio_venta;
+                articulo.stock = model.stock;
+                articulo.descripcion = model.descripcion;
+            
                   try
                   {
                       await _context.SaveChangesAsync();
@@ -102,132 +106,136 @@ namespace Sistema.Web.Controllers
 
                   return Ok();
               }
+        
+             // POST: api/Articulos/Crear
+             [HttpPost("[action]")]
+             public async Task<IActionResult> Crear([FromBody] CrearViewModel model)
+             {
+                 if (!ModelState.IsValid)
+                 {
+                     return BadRequest(ModelState);
+                 }
 
-              // POST: api/Categorias/Crear
-              [HttpPost("[action]")]
-              public async Task<IActionResult> Crear([FromBody] CrearViewModel model)
-              {
-                  if (!ModelState.IsValid)
-                  {
-                      return BadRequest(ModelState);
-                  }
+                 Articulo articulo = new Articulo
+                 {
+                     idcategoria = model.idcategoria,
+                     codigo = model.codigo,
+                     nombre = model.nombre,
+                     precio_venta = model.precio_venta,
+                     stock = model.stock,
+                     descripcion = model.descripcion,
+                     condicion = true
+                 };
 
-                  Categoria categoria = new Categoria
-                  {
-                      nombre = model.nombre,
-                      descripcion = model.descripcion,
-                      condicion = true
-                  };
+                 _context.Articulos.Add(articulo);
 
-                  _context.Categorias.Add(categoria);
+                 try
+                 {
+                     await _context.SaveChangesAsync();
+                 }
+                 catch (Exception ex)
+                 {
 
-                  try
-                  {
-                      await _context.SaveChangesAsync();
-                  }
-                  catch (Exception ex)
-                  {
+                     return BadRequest();
+                 }
 
-                      return BadRequest();
-                  }
+                 return Ok();
+             }
+        
+             // DELETE: api/Articulos/Eliminar/1
+             [HttpDelete("[action]/{id}")]
+             public async Task<IActionResult> Eliminar([FromRoute] int id)
+             {
+                 if (!ModelState.IsValid)
+                 {
+                     return BadRequest(ModelState);
+                 }
 
-                  return Ok();
-              }
+                 var articulo = await _context.Articulos.FindAsync(id);
+                 if (articulo == null)
+                 {
+                     return NotFound();
+                 }
 
-              // DELETE: api/Categorias/Eliminar/1
-              [HttpDelete("[action]/{id}")]
-              public async Task<IActionResult> Eliminar([FromRoute] int id)
-              {
-                  if (!ModelState.IsValid)
-                  {
-                      return BadRequest(ModelState);
-                  }
+                 _context.Articulos.Remove(articulo);
 
-                  var categoria = await _context.Categorias.FindAsync(id);
-                  if (categoria == null)
-                  {
-                      return NotFound();
-                  }
+                 try
+                 {
+                     await _context.SaveChangesAsync();
+                 }
+                 catch (Exception ex)
+                 {
 
-                  _context.Categorias.Remove(categoria);
+                     return BadRequest();
+                 }
+                 await _context.SaveChangesAsync();
 
-                  try
-                  {
-                      await _context.SaveChangesAsync();
-                  }
-                  catch (Exception ex)
-                  {
+                 return Ok(articulo);
+             }
 
-                      return BadRequest();
-                  }
-                  await _context.SaveChangesAsync();
+             // PUT: api/Articulos/Desactivar/1
+             [HttpPut("[action]/{id}")]
+             public async Task<IActionResult> Desactivar([FromRoute] int id)
+             {
 
-                  return Ok(categoria);
-              }
+                 if (id <= 0)
+                 {
+                     return BadRequest();
+                 }
 
-              // PUT: api/Categorias/Desactivar/1
-              [HttpPut("[action]/{id}")]
-              public async Task<IActionResult> Desactivar([FromRoute] int id)
-              {
+                 var articulo = await _context.Articulos.FirstOrDefaultAsync(
+                     a => a.idarticulo == id);
 
-                  if (id <= 0)
-                  {
-                      return BadRequest();
-                  }
+                 if (articulo == null) { return NotFound(); }
 
-                  var categoria = await _context.Categorias.FirstOrDefaultAsync(
-                      c => c.idcategoria == id);
+                 articulo.condicion = false;
 
-                  if (categoria == null) { return NotFound(); }
+                 try
+                 {
+                     await _context.SaveChangesAsync();
+                 }
+                 catch (DbUpdateConcurrencyException)
+                 {
+                     //Guardar Exepcion
+                     return BadRequest();
+                 }
 
-                  categoria.condicion = false;
+                 return Ok();
+             }
 
-                  try
-                  {
-                      await _context.SaveChangesAsync();
-                  }
-                  catch (DbUpdateConcurrencyException)
-                  {
-                      //Guardar Exepcion
-                      return BadRequest();
-                  }
+             // PUT: api/Articulos/Activar/1
+             [HttpPut("[action]/{id}")]
+             public async Task<IActionResult> Activar([FromRoute] int id)
+             {
 
-                  return Ok();
-              }
+                 if (id <= 0)
+                 {
+                     return BadRequest();
+                 }
 
-              // PUT: api/Categorias/Activar/1
-              [HttpPut("[action]/{id}")]
-              public async Task<IActionResult> Activar([FromRoute] int id)
-              {
+                 var articulo = await _context.Articulos.FirstOrDefaultAsync(
+                     a => a.idarticulo == id);
 
-                  if (id <= 0)
-                  {
-                      return BadRequest();
-                  }
+                 if (articulo == null) { return NotFound(); }
 
-                  var categoria = await _context.Categorias.FirstOrDefaultAsync(
-                      c => c.idcategoria == id);
+                 articulo.condicion = true;
 
-                  if (categoria == null) { return NotFound(); }
+                 try
+                 {
+                     await _context.SaveChangesAsync();
+                 }
+                 catch (DbUpdateConcurrencyException)
+                 {
+                     //Guardar Exepcion
+                     return BadRequest();
+                 }
 
-                  categoria.condicion = true;
+                 return Ok();
+             }
 
-                  try
-                  {
-                      await _context.SaveChangesAsync();
-                  }
-                  catch (DbUpdateConcurrencyException)
-                  {
-                      //Guardar Exepcion
-                      return BadRequest();
-                  }
-
-                  return Ok();
-              }
-
-              private bool ArticuloExists(int id)
-              {
-                  return _context.Articulos.Any(e => e.idarticulo == id);
-              }*/
+             private bool ArticuloExists(int id)
+             {
+                 return _context.Articulos.Any(e => e.idarticulo == id);
+             }
     }
 }

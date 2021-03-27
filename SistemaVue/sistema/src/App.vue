@@ -24,7 +24,7 @@
               </v-list-item>
             </template>
             <template>
-              <v-list-item :to="{name:''}">
+              <v-list-item :to="{name:'articulos'}">
                 <v-list-item-action>
                   <v-icon color="grey">article</v-icon>
                 </v-list-item-action>
