@@ -58,7 +58,7 @@
 
                 <v-card-text>
                   <v-container grid-list-md>
-                    <v-row no-gutters>
+                    <v-layout wrap>
                       <v-flex xs6 sm6 md6>
                         <v-text-field
                           v-model="editedItem.codigo"
@@ -104,7 +104,7 @@
                         :key="v"
                         v-text="v"
                       ></v-flex>
-                    </v-row>
+                    </v-layout>
                   </v-container>
                 </v-card-text>
 
@@ -172,10 +172,7 @@ export default {
     editedItem: {
       id: "",
       idcategoria: "",
-      categorias: [
-        {text: 'Categoría 1', value: 1},
-        {text: 'Categoría 2', value: 2}
-      ],
+      categorias:[],
       codigo: "",
       nombre: "",
       stock: 0,
@@ -217,6 +214,7 @@ export default {
 
   created() {
     this.listar();
+    this.select();
   },
 
   methods: {
@@ -250,22 +248,38 @@ export default {
         });
     },
 
+    select() {
+      let me = this;
+      var categoriasArray = [];
+      axios
+        .get("api/Categorias/Select")
+        .then((response) => {
+          categoriasArray = response.data;
+          categoriasArray.map( (item) => {
+            me.editedItem.categorias.push({
+              text: item.nombre,
+              value: item.idcategoria});
+          })
+        })
+        .catch((error) => {
+          console.log(error);
+        });
+    },
+
     isEnabled(slot) {
       return this.enabled === slot;
     },
 
     editItem(item) {
-      this.editedItem.id = item.idcategoria;
+      this.editedItem.id = item.idarticulo;
+      this.editedItem.idcategoria = item.idcategoria;
+      this.editedItem.codigo = item.codigo;
       this.editedItem.nombre = item.nombre;
+      this.editedItem.stock = item.stock;
+      this.editedItem.precio_venta = item.precio_venta;
       this.editedItem.descripcion = item.descripcion;
       this.editedIndex = 1;
       this.dialog = true;
-    },
-
-    deleteItem(item) {
-      const index = this.desserts.indexOf(item);
-      confirm("Are you sure you want to delete this item?") &&
-        this.desserts.splice(index, 1);
     },
 
     close() {
@@ -275,6 +289,10 @@ export default {
 
     limpiar() {
       this.editedItem.id = "";
+      this.editedItem.idcategoria = "";
+      this.editedItem.codigo = "";
+      this.editedItem.precio_venta = "";
+      this.editedItem.stock = "";
       this.editedItem.nombre = "";
       this.editedItem.descripcion = "";
       this.editedIndex = -1;
@@ -287,10 +305,14 @@ export default {
       if (this.editedIndex > -1) {
         let me = this;
         axios
-          .put("api/Categorias/Actualizar", {
-            idcategoria: me.editedItem.id,
+          .put("api/Articulos/Actualizar", {
+            idarticulo: me.editedItem.id,
+            idcategoria: me.editedItem.idcategoria,
+            codigo: me.editedItem.codigo,
             nombre: me.editedItem.nombre,
             descripcion: me.editedItem.descripcion,
+            stock: me.editedItem.stock,
+            precio_venta: me.editedItem.precio_venta
           })
           .then((item) => {
             me.close();
@@ -303,9 +325,13 @@ export default {
       } else {
         let me = this;
         axios
-          .post("api/Categorias/Crear", {
+          .post("api/Articulos/Crear", {
+            idcategoria: me.editedItem.idcategoria,
+            codigo: me.editedItem.codigo,
             nombre: me.editedItem.nombre,
             descripcion: me.editedItem.descripcion,
+            stock: me.editedItem.stock,
+            precio_venta: me.editedItem.precio_venta
           })
           .then((item) => {
             me.close();
@@ -319,15 +345,27 @@ export default {
     },
 
     validar() {
-      const item = this.editedItem;
+      let item = this.editedItem;
       this.valida = 0;
       this.validaMensaje = [];
       if (item.nombre.length < 3 || item.nombre.length > 50) {
         this.validaMensaje.push(
           "El nombre debe tener mas de 3 caracteres y menos de 50 caracteres"
         );
-        console.log(this.validaMensaje);
       }
+
+      if (!item.idcategoria){
+        this.validaMensaje.push("Seleccione una categoría");
+      }
+
+      if (!item.stock || item.stock==0){
+            this.validaMensaje.push("Ingrese el stock inicial del artículo");
+          }
+
+      if (!item.precio_venta || item.precio_venta == 0){
+        this.validaMensaje.push( "Ingrese el precio del artículo");
+      }
+
       if (this.validaMensaje.length) {
         this.valida = 1;
       }
